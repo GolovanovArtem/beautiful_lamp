@@ -26,8 +26,8 @@
 #define NUM_LEDS 30         // количсетво светодиодов в одном отрезке ленты
 #define NUM_STRIPS 2        // количество отрезков ленты (в параллели)
 #define LED_PIN 2           // пин ленты
-#define BTN_PIN 4           // пин кнопки/сенсора
-#define RELAY_PIN 3          // пин реле основного света
+#define BTN_PIN 3           // пин кнопки/сенсора
+#define RELAY_PIN 4          // пин реле основного света
 #define MIN_BRIGHTNESS 5  // минимальная яркость при ручной настройке
 #define BRIGHTNESS 20      // начальная яркость
 #define FIRE_PALETTE 3     
@@ -37,7 +37,7 @@
 #include "GyverPower.h"
 
 #include "GyverButton.h"
-GButton touch(BTN_PIN, HIGH_PULL, NORM_OPEN);
+GButton touch(BTN_PIN, LOW_PULL, NORM_OPEN);
 
 #include <FastLED.h>
 CRGB leds[NUM_LEDS];
