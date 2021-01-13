@@ -6,7 +6,6 @@
   Автор: AlexGyver Technologies, 2018
   https://AlexGyver.ru/
 */
-
 /*
    Управление кнопкой/сенсором
   - Удержание - яркость
@@ -22,17 +21,20 @@
 
 // ************************** НАСТРОЙКИ ***********************
 #define CURRENT_LIMIT 2000  // лимит по току в миллиамперах, автоматически управляет яркостью (пожалей свой блок питания!) 0 - выключить лимит
-#define AUTOPLAY_TIME 180    // время между сменой режимов в секундах
-
+#define AUTOPLAY_TIME 60    // время между сменой режимов в секундах
+#define time_timer 3600000  // времся с мрмента акимвации таймера выключения
 #define NUM_LEDS 30         // количсетво светодиодов в одном отрезке ленты
-#define NUM_STRIPS 1        // количество отрезков ленты (в параллели)
+#define NUM_STRIPS 2        // количество отрезков ленты (в параллели)
 #define LED_PIN 2           // пин ленты
 #define BTN_PIN 3           // пин кнопки/сенсора
+#define RELAY_PIN 4          // пин реле основного света
 #define MIN_BRIGHTNESS 5  // минимальная яркость при ручной настройке
-#define BRIGHTNESS 100      // начальная яркость
-
+#define BRIGHTNESS 20      // начальная яркость
+#define FIRE_PALETTE 3     
 // ************************** ДЛЯ РАЗРАБОТЧИКОВ ***********************
-#define MODES_AMOUNT 6
+#define MODES_AMOUNT 11
+
+#include "GyverPower.h"
 
 #include "GyverButton.h"
 GButton touch(BTN_PIN, LOW_PULL, NORM_OPEN);
@@ -48,12 +50,15 @@ GTimer_ms brightTimer(20);
 
 int brightness = BRIGHTNESS;
 int tempBrightness;
-byte thisMode = 6;
-byte color=0;
+byte thisMode = 0;
+long timer = 0;
+byte saveMode = 0;
+byte i = 0;
 
 bool gReverseDirection = false;
 boolean loadingFlag = true;
-boolean autoplay = true;
+boolean autoplay = false;
+boolean timer_on = false;
 boolean powerDirection = true;
 boolean powerActive = false;
 boolean powerState = true;
@@ -61,17 +66,10 @@ boolean whiteMode = false;
 boolean brightDirection = true;
 boolean wasStep = false;
 
-long timermillis = 0;
-int win_activ_time= 0;
-
-// переменные засекания времени.
-
-
-
 
 // залить все
-void fillAll(CHSV newcolor,int i, int l) {
-  for (i = 0; i < l; i++) {
+void fillAll(CRGB newcolor) {
+  for (int i = 0; i < NUM_LEDS; i++) {
     leds[i] = newcolor;
   }
 }
@@ -87,14 +85,13 @@ void setup() {
   if (CURRENT_LIMIT > 0) FastLED.setMaxPowerInVoltsAndMilliamps(5, CURRENT_LIMIT / NUM_STRIPS);
   FastLED.setBrightness(brightness);
   FastLED.show();
+  pinMode(RELAY_PIN, OUTPUT);
+
 
   randomSeed(analogRead(0));
   touch.setTimeout(300);
   touch.setStepTimeout(50);
 
-
-
-  gPal = CRGBPalette16(CRGB::Red, CRGB::Blue, CRGB::Blue,  CRGB::Blue);
 
 }
 
@@ -104,29 +101,36 @@ void loop() {
     byte clicks = touch.getClicks();
     switch (clicks) {
       case 1:
-        powerDirection = !powerDirection;
-        powerActive = true;
-        tempBrightness = brightness * !powerDirection;
-        break;
-      case 2: if (!whiteMode && !powerActive) {
+        if (!whiteMode && !powerActive) {
           nextMode();
         }
+        break;
+      case 2: 
+      powerDirection = !powerDirection;
+        powerActive = true;
+        tempBrightness = brightness * !powerDirection;
         break;
       case 3: if (!powerActive) {
           whiteMode = !whiteMode;
           if (whiteMode) {
-            effectTimer.stop();
-            fillAll(CHSV(0, 0, 255),0,5);
-            FastLED.show();
+            digitalWrite(RELAY_PIN, 1);
           } else {
-            effectTimer.start();
+            digitalWrite(RELAY_PIN, 0);
           }
         }
         break;
-      case 4: if (!whiteMode && !powerActive) autoplay = !autoplay;
+      case 4: if (!whiteMode && !powerActive) { 
+        timer_on = !timer_on; 
+        timer = millis();
+        saveMode = thisMode;
+        thisMode = 15;
+        }
         break;
-      default:
+      default: { 
+        saveMode = thisMode;
         break;
+      }
+        
     }
   }
 
@@ -153,40 +157,47 @@ void loop() {
 
   if (effectTimer.isReady() && powerState) {
     switch (thisMode) {
-      case 0: lighter();
+      case 0: fire_4();
         break;
-      case 1: lightBugs();
+      case 1: fire_3();
         break;
-      case 2: colors();
+      case 2: fire_1();
         break;
-      case 3: rainbow();
+      case 3: fire_2();
         break;
-      case 4: sparkles();
+      case 4: rainbow();
         break;
-      case 5: cyberpunk();
+      case 5: sparkles();
         break;
-      case 7: flashescamera();
+      case 6: colors();
         break;
-      case 6: condominium();
-        break;
-      case 8: vinigret();
-        break;
+      case 7: lightBugs();
+              break;
+      case 8: color_red();
+              break;
+      case 9: color_aqua();
+              break;
+      case 10: color_pink();
+              break; 
+      case 15: tab_for_efect();
+              break;
+      case 30: the_end();
+              break;        
     }
     FastLED.show();
   }
 
   if (autoplayTimer.isReady() && autoplay) {    // таймер смены режима
-    nextMode();
   }
 
   brightnessTick();
+
+  if (timer_on) if (millis()-timer > time_timer){
+    thisMode = 30;
+} 
+
   
-
-
-  if (color==255) color=0;
-   else color++;
 }
-
 void nextMode() {
   thisMode++;
   if (thisMode >= MODES_AMOUNT) thisMode = 0;
