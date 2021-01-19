@@ -1,7 +1,19 @@
 #define TRACK_STEP 50
 
+byte colArry[NUM_LEDS];
+byte saturationArry[NUM_LEDS];
+byte brightnesspixArry[NUM_LEDS];
+
+// по сути параметры объекта
+#define numberObjects 10
+byte positionArry[NUM_LEDS];//позиция на ленте от 1 до колличества светодиодов на ленте
+bool directionArry[numberObjects];// направление пиксиля (куда бежит)
+// еще цвет объекта, но это colArry, его выше объявил 
+
 byte hue;
 byte brightnesspix;
+byte saturation;
+byte count;
 // ****************************** ОГОНЁК ******************************
 int16_t position;
 boolean direction;
@@ -122,48 +134,48 @@ void cyberpunkWithPalette()
 }
 //brightnesspix
 
-#define MINTIME 1000
-#define MAXNTIME 2000
+#define MINTIME 3000
+#define MAXNTIME 5000
 
 void condominium(){
   hue = 50;
-  if (millis()-timermillis > win_activ_time)
+  if (millis()-timermillis1 > chec_time_millis)
   {
       switch (random(0, 8)) 
     {
         case 0: {
           for (int i = 0; i < 5; i++)
-             leds[i]= CHSV(hue, 255, brightness);
-          timermillis = millis();
-          win_activ_time = random(MINTIME,MAXNTIME);
+             leds[i]= CHSV(hue, 255, 255);
+          timermillis1 = millis();
+          chec_time_millis = random(MINTIME,MAXNTIME);
         }
           break;
         case 1: {
           for (int i = 8; i < 13; i++)
-             leds[i]= CHSV(hue, 255, brightness);
-          timermillis = millis();
-          win_activ_time = random(MINTIME,MAXNTIME);
+             leds[i]= CHSV(hue, 255, 255);
+          timermillis1 = millis();
+          chec_time_millis = random(MINTIME,MAXNTIME);
         }
           break;
         case 2: {
           for (int i = 16; i < 21; i++)
-             leds[i]= CHSV(hue, 255, brightness);
-          timermillis = millis();
-          win_activ_time = random(MINTIME,MAXNTIME);
+             leds[i]= CHSV(hue, 255, 255);
+          timermillis1 = millis();
+          chec_time_millis = random(MINTIME,MAXNTIME);
         }
           break;
         case 3: {
           for (int i = 24; i < 29; i++)
-             leds[i]= CHSV(hue, 255, brightness);
-          timermillis = millis();
-          win_activ_time = random(MINTIME,MAXNTIME);
+             leds[i]= CHSV(hue, 255, 255);
+          timermillis1 = millis();
+          chec_time_millis = random(MINTIME,MAXNTIME);
         }
           break;
         case 4: {
           for (int i = 0; i < 5; i++)
              leds[i]= CHSV(0, 0, 0);
-          timermillis = millis();
-          win_activ_time = random(MINTIME,MAXNTIME);
+          timermillis1 = millis();
+          chec_time_millis = random(MINTIME,MAXNTIME);
         }
           break;
         case 5: {
@@ -174,15 +186,15 @@ void condominium(){
         case 6: {
           for (int i = 16; i < 21; i++)
              leds[i]= CHSV(0, 0, 0);
-          timermillis = millis();
-          win_activ_time = random(MINTIME,MAXNTIME);
+          timermillis1 = millis();
+          chec_time_millis = random(MINTIME,MAXNTIME);
         }
           break;
         case 7: {
           for (int i = 24; i < 29; i++)
              leds[i]= CHSV(0, 0, 0);
-          timermillis = millis();
-          win_activ_time = random(MINTIME,MAXNTIME);
+          timermillis1 = millis();
+          chec_time_millis = random(MINTIME,MAXNTIME);
         }
           break;
     }
@@ -191,12 +203,16 @@ void condominium(){
 
 }
 void flashescamera() {
-
   hue += 1;
+  chec_time_millis = random(20,400); // частота миганий 
   for (int i = 0; i < NUM_LEDS; i++){
     leds[i] = CHSV((byte)(hue + i * float(255 / 255)), 255, 70);
   }
-  leds[random(0, NUM_LEDS-1)] = CHSV(hue, 255, 255); //возможно стоит мигать полеже
+    if (millis()-timermillis1 > chec_time_millis){
+      leds[random(0, NUM_LEDS-1)] = CHSV(hue, 255, 255);
+      timermillis1 = millis();
+  }
+  
 }
 
 // *************** ВИНИГРЕТ ***************
@@ -208,10 +224,127 @@ void vinigret() {
   }
 }
 
+void laserShot() {
+  checkRenderTime = 30;// время отрисовки
+  if (millis()-renderTime > checkRenderTime)// ограничение времени отрисовки
+    {
+      renderTime = millis();
+      
+
+
+     
+      
+
+
+
+
+
+
+
+// Записать позиции активных диодов, после чего они будут отрисованы
+
+     // colArry[i] = col;
+ // saturationArry[i] = stst;
+ // brightnesspixArry[i] = brig;
+ //byte positionArry[NUM_LEDS];//позиция на пиксиле от 1 до колличества светодиодов на ленте
+//byte directionArry[10];// направление пиксиля (куда бежит)
+    }
+   for (int i = 0; i < NUM_LEDS; i++)
+   {
+    leds[i] = CHSV(colArry[i], saturationArry[i], brightnesspixArry[i]);
+   }
+    
+}
+
+void fire () {
+  
+}
+void waterDrop () {
+  
+}
+void comets () {
+  
+}
+void colorCatchUp () {
+  if (millis()-timermillis1 > chec_time_millis)// рандомный таймер смены направления режима (при смене направления менять и цвет)
+    {
+    timermillis1 = millis();
+    chec_time_millis = random(3000,1000);//задается время смены направления
+    direction = !direction;
+    checkRenderTime = random(0,120); // Скорость отображения (скорось бега диодов от 0 до 30 не успевает отрисовывать)
+    }
+  if (millis()-timerForChangeColor > checkTimeChangeColor)//рандомный таймер смены цета 
+  {
+    timerForChangeColor = millis();
+    checkTimeChangeColor = random(500, 1500);//задается время смены цвета
+    hue+=110;//задается цвет
+  }
+  
+  if (direction)
+  {
+    leds[NUM_LEDS-1] = CHSV(hue, 255, 255);
+    synchronizationArrays (NUM_LEDS-1, hue, 255, 255);
+    
+    if (millis()-renderTime > checkRenderTime)// время отрисовки
+    {
+      renderTime = millis();
+      
+      for (int i = 1; i < NUM_LEDS-1; i++)
+      {
+        leds[i] = CHSV(colArry[i+1], 255, 255); //
+        synchronizationArrays (i, colArry[i+1], 255, 255);
+      }
+      
+    }
+  }
+  else{
+    leds[0] = CHSV(hue, 255, 255);
+    synchronizationArrays (0, hue, 255, 255);
+
+    if (millis()-renderTime > checkRenderTime)// время отрисовки
+    {
+      renderTime = millis();
+      
+      for (int i = NUM_LEDS-1; i > 0; i--)
+      {
+        leds[i] = CHSV(colArry[i-1], 255, 255); //
+        synchronizationArrays (i, colArry[i-1], 255, 255);
+      }
+      
+    }
+  }
+}
+//int16_t position;
+//boolean direction;
+//byte count;
+//byte hue;
+//byte brightnesspix;
+//byte saturation;
+
+void staticColor () {
+  hue = 0;
+  for (int i = 0; i < NUM_LEDS; i++){
+    leds[i] = CHSV(hue, 255, 255);
+  }
+}
+void statikRainbow () {
+  hue = 0;
+  for (int i = NUM_LEDS; i > 0; i--){
+    leds[i] = CHSV(hue, 255, 255);
+    hue += 255 / NUM_LEDS;
+  }
+}
+
 // ****************** СЛУЖЕБНЫЕ ФУНКЦИИ *******************
 void fade() {
   for (int i = 0; i < NUM_LEDS; i++) {
     if ((uint32_t)getPixColor(i) == 0) continue;
     leds[i].fadeToBlackBy(TRACK_STEP);
   }
+}
+
+void synchronizationArrays(byte i, byte col, byte stst, byte brig){
+  colArry[i] = col;
+  saturationArry[i] = stst;
+  brightnesspixArry[i] = brig;
 }

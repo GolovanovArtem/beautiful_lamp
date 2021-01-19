@@ -28,11 +28,11 @@
 #define NUM_STRIPS 1        // количество отрезков ленты (в параллели)
 #define LED_PIN 2           // пин ленты
 #define BTN_PIN 3           // пин кнопки/сенсора
-#define MIN_BRIGHTNESS 5  // минимальная яркость при ручной настройке
-#define BRIGHTNESS 100      // начальная яркость
+#define MIN_BRIGHTNESS 70  // минимальная яркость при ручной настройке
+#define BRIGHTNESS 150      // начальная яркость
 
 // ************************** ДЛЯ РАЗРАБОТЧИКОВ ***********************
-#define MODES_AMOUNT 6
+#define MODES_AMOUNT 15
 
 #include "GyverButton.h"
 GButton touch(BTN_PIN, LOW_PULL, NORM_OPEN);
@@ -48,8 +48,8 @@ GTimer_ms brightTimer(20);
 
 int brightness = BRIGHTNESS;
 int tempBrightness;
-byte thisMode = 6;
-byte color=0;
+byte thisMode = 13;
+
 
 bool gReverseDirection = false;
 boolean loadingFlag = true;
@@ -61,8 +61,14 @@ boolean whiteMode = false;
 boolean brightDirection = true;
 boolean wasStep = false;
 
-long timermillis = 0;
-int win_activ_time= 0;
+long timermillis1 = 0;
+int chec_time_millis= 0;
+
+long timerForChangeColor = 0;//
+int checkTimeChangeColor = 0;//
+
+long renderTime = 0;    //таймер отрисовки
+int checkRenderTime = 0;//проверка нужно лти отрисовать
 
 // переменные засекания времени.
 
@@ -165,11 +171,29 @@ void loop() {
         break;
       case 5: cyberpunk();
         break;
-      case 7: flashescamera();
+      case 6: flashescamera();
         break;
-      case 6: condominium();
+      case 7: condominium();
         break;
       case 8: vinigret();
+        break;
+      case 9: fire();//newrwgim
+        break;
+      case 10:
+      {
+
+        laserShot();
+      }
+        break;
+      case 11: waterDrop();//newrwgim
+        break;
+      case 12: comets();//newrwgim
+        break;
+      case 13: colorCatchUp();
+        break;
+      case 14: staticColor();
+        break;
+      case 15: statikRainbow();
         break;
     }
     FastLED.show();
@@ -180,11 +204,6 @@ void loop() {
   }
 
   brightnessTick();
-  
-
-
-  if (color==255) color=0;
-   else color++;
 }
 
 void nextMode() {
