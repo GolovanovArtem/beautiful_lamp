@@ -1,28 +1,10 @@
-/*
-  Скетч к проекту "Эффектный светильник"
-  Страница проекта (схемы, описания): https://alexgyver.ru/gyverlight/
-  Исходники на GitHub: https://github.com/AlexGyver/gyverlight/
-  Нравится, как написан код? Поддержи автора! https://alexgyver.ru/support_alex/
-  Автор: AlexGyver Technologies, 2018
-  https://AlexGyver.ru/
-*/
-
-/*
-   Управление кнопкой/сенсором
-  - Удержание - яркость
-  - 1х тап - вкл/выкл
-  - 2х тап - переключ режима
-  - 3х тап - вкл/выкл белый свет
-  - 4х тап - старт/стоп авто смены режимов
-*/
-
-/*
-   Версия 1.3 - пофикшен баг с fillAll
-*/
+#define NUMBEROBJECTS 8
 
 // ************************** НАСТРОЙКИ ***********************
 #define CURRENT_LIMIT 2000  // лимит по току в миллиамперах, автоматически управляет яркостью (пожалей свой блок питания!) 0 - выключить лимит
 #define AUTOPLAY_TIME 180    // время между сменой режимов в секундах
+
+
 
 #define NUM_LEDS 30         // количсетво светодиодов в одном отрезке ленты
 #define NUM_STRIPS 1        // количество отрезков ленты (в параллели)
@@ -48,7 +30,7 @@ GTimer_ms brightTimer(20);
 
 int brightness = BRIGHTNESS;
 int tempBrightness;
-byte thisMode = 13;
+byte thisMode = 9;
 
 
 bool gReverseDirection = false;
@@ -60,6 +42,16 @@ boolean powerState = true;
 boolean whiteMode = false;
 boolean brightDirection = true;
 boolean wasStep = false;
+
+
+int timeToShot[NUMBEROBJECTS];
+byte colorObject[NUMBEROBJECTS]; //цвета оъектов
+bool directionArry[NUMBEROBJECTS];// направление пиксиля (куда бежит)
+bool alredyShot[NUMBEROBJECTS]; // "уже вылетел", на кждый объект, чтобы не вылетали повторно.
+int positionArry[NUMBEROBJECTS];//позиция на ленте от 1 до колличества светодиодов на ленте
+
+
+bool oneRun;
 
 long timermillis1 = 0;
 int chec_time_millis= 0;
@@ -122,7 +114,7 @@ void loop() {
           whiteMode = !whiteMode;
           if (whiteMode) {
             effectTimer.stop();
-            fillAll(CHSV(0, 0, 255),0,5);
+            fillAll(CHSV(0, 0, 255),0,NUM_LEDS-1);
             FastLED.show();
           } else {
             effectTimer.start();
@@ -171,17 +163,54 @@ void loop() {
         break;
       case 5: cyberpunk();
         break;
-      case 6: flashescamera();
+      case 6: fire();
         break;
       case 7: condominium();
         break;
       case 8: vinigret();
         break;
-      case 9: fire();//newrwgim
+      case 9: flashescamera();//newrwgim
         break;
       case 10:
       {
-
+        if (oneRun == true){
+          oneRun = false;
+          for (int i = 0; i < NUMBEROBJECTS/2; i++) //приспаиваю свойста первой половине объектов
+          {
+            timeToShot[i] = random(50, 2000); //время до вылета, после обновления таймера, после вылета всех, у каждого объекта оно измениться
+            colorObject[i] = 0; //цвет лазерного выстрела присваивается только здесь 0 - красный 
+            directionArry[i] = true; //направление выстрела тру - вправо
+            alredyShot[i]=false; // возможно это можно будет убрать, потому что при объявлении и так все лож
+            positionArry[i] = -1;
+/*
+            Serial.println("--------");
+            Serial.println(timeToShot[i]);
+            Serial.println(directionArry[i]);
+            Serial.println(alredyShot[i]);
+            Serial.println(colorObject[i]);
+            Serial.println(positionArry[i]);*/
+            
+  
+          }
+        
+          for (int i = NUMBEROBJECTS/2; i < NUMBEROBJECTS; i++) //приспаиваю свойста второй половине объектов
+          {
+            timeToShot[i] = random(50, 2000); //время до вылета, после обновления таймера, после вылета всех, у каждого объекта оно измениться
+            colorObject[i] = 150; //цвет лазерного выстрела присваивается только здесь 150 - наверное синий 
+            directionArry[i] = false; //направление выстрела фолс - влево
+            alredyShot[i]=false; // возможно это можно будет убрать, потому что при объявлении и так все лож
+            positionArry[i] = -1;
+          /*
+            Serial.println("--------");
+            Serial.println(timeToShot[i]);
+            Serial.println(directionArry[i]);
+            Serial.println(alredyShot[i]);
+            Serial.println(colorObject[i]);
+            Serial.println(positionArry[i]);*/
+          }
+          chec_time_millis = millis();
+          FastLED.clear();
+        }
         laserShot();
       }
         break;
@@ -207,6 +236,7 @@ void loop() {
 }
 
 void nextMode() {
+  oneRun = true;
   thisMode++;
   if (thisMode >= MODES_AMOUNT) thisMode = 0;
   loadingFlag = true;
