@@ -30,7 +30,7 @@ GTimer_ms brightTimer(20);
 
 int brightness = BRIGHTNESS;
 int tempBrightness;
-byte thisMode = 9;
+byte thisMode = 2;
 
 
 bool gReverseDirection = false;
