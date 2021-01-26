@@ -77,6 +77,7 @@ void lightBugs() {
 // ****************************** ЦВЕТА ******************************
 void colors() {
   hue += 1;
+  Serial.println(hue);
   for (int i = 0; i < NUM_LEDS; i++)
     leds[i] = CHSV((byte)(hue + i * float(255 / 255)), 255, 255);
 }
@@ -138,66 +139,111 @@ void cyberpunkWithPalette()
 //brightnesspix
 
 #define MINTIME 3000
-#define MAXNTIME 5000
+#define MAXNTIME 7000
 // ****************************** Моногоэтажка ******************************
 void condominium(){
   hue = 50;
   if (millis()-timermillis1 > chec_time_millis)
   {
-      switch (random(0, 8)) 
+      switch (random(0, 11)) 
     {
         case 0: {
           for (int i = 0; i < 5; i++)
-             leds[i]= CHSV(hue, 255, 255);
+             leds[i]= CHSV(45, 200, 255);
           timermillis1 = millis();
           chec_time_millis = random(MINTIME,MAXNTIME);
+          break;
         }
           break;
         case 1: {
-          for (int i = 8; i < 13; i++)
-             leds[i]= CHSV(hue, 255, 255);
+          if (random(1,10)>6){
+            hue = 200;
+          }
+          else hue = 45;
+          for (int i = 6; i < 10; i++)
+             leds[i]= CHSV(hue, 210, 255);
           timermillis1 = millis();
           chec_time_millis = random(MINTIME,MAXNTIME);
+          break;
         }
           break;
         case 2: {
-          for (int i = 16; i < 21; i++)
-             leds[i]= CHSV(hue, 255, 255);
+          for (int i = 11; i < 15; i++)
+             leds[i]= CHSV(45, 150, 255);
           timermillis1 = millis();
           chec_time_millis = random(MINTIME,MAXNTIME);
+          break;
         }
           break;
         case 3: {
-          for (int i = 24; i < 29; i++)
-             leds[i]= CHSV(hue, 255, 255);
+          for (int i = 16; i < 20; i++)
+             leds[i]= CHSV(45, 200, 255);
           timermillis1 = millis();
           chec_time_millis = random(MINTIME,MAXNTIME);
-        }
           break;
+        }
+        break;
         case 4: {
+          for (int i = 21; i < 25; i++)
+             leds[i]= CHSV(40, 175, 255);
+          timermillis1 = millis();
+          chec_time_millis = random(MINTIME,MAXNTIME);
+          break;
+        }
+        break;
+        case 5: {
+          for (int i = 26; i < 30; i++)
+             leds[i]= CHSV(40, 180, 255);
+          timermillis1 = millis();
+          chec_time_millis = random(MINTIME,MAXNTIME);
+          break;
+        }
+        
+          break;
+        case 6: {
           for (int i = 0; i < 5; i++)
              leds[i]= CHSV(0, 0, 0);
           timermillis1 = millis();
           chec_time_millis = random(MINTIME,MAXNTIME);
-        }
           break;
-        case 5: {
-          for (int i = 8; i < 13; i++)
-             leds[i]= CHSV(0, 0, 0);
-        }
-          break;
-        case 6: {
-          for (int i = 16; i < 21; i++)
-             leds[i]= CHSV(0, 0, 0);
-          timermillis1 = millis();
-          chec_time_millis = random(MINTIME,MAXNTIME);
         }
           break;
         case 7: {
-          for (int i = 24; i < 29; i++)
+          for (int i = 6; i < 10; i++)
+             leds[i]= CHSV(0, 0, 0);
+             break;
+        }
+          break;
+        case 8: {
+          for (int i = 11; i < 15; i++)
              leds[i]= CHSV(0, 0, 0);
           timermillis1 = millis();
           chec_time_millis = random(MINTIME,MAXNTIME);
+          break;
+        }
+          break;
+        case 9: {
+          for (int i = 16; i < 20; i++)
+             leds[i]= CHSV(0, 0, 0);
+          timermillis1 = millis();
+          chec_time_millis = random(MINTIME,MAXNTIME);
+          break;
+        }
+          break;
+         case 10: {
+          for (int i = 21; i < 25; i++)
+             leds[i]= CHSV(0, 0, 0);
+          timermillis1 = millis();
+          chec_time_millis = random(MINTIME,MAXNTIME);
+          break;
+        }
+          break;
+        case 11: {
+          for (int i = 26; i < 30; i++)
+             leds[i]= CHSV(0, 0, 0);
+          timermillis1 = millis();
+          chec_time_millis = random(MINTIME,MAXNTIME);
+          break;
         }
           break;
     }
@@ -368,6 +414,9 @@ void waterDrop () {
 }
 // ****************************** КОМЕТЫ ******************************
 void comets () {
+  if (millis()-timermillis1 > 50){
+    int i = 
+  }
   
 }
 // ****************************** САЛКИ ЦВЕТОВ ******************************

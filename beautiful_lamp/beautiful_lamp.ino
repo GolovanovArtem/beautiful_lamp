@@ -8,16 +8,16 @@
 
 #define NUM_LEDS 30         // количсетво светодиодов в одном отрезке ленты
 #define NUM_STRIPS 1        // количество отрезков ленты (в параллели)
-#define LED_PIN 2           // пин ленты
+#define LED_PIN 12           // пин ленты
 #define BTN_PIN 3           // пин кнопки/сенсора
 #define MIN_BRIGHTNESS 70  // минимальная яркость при ручной настройке
-#define BRIGHTNESS 150      // начальная яркость
+#define BRIGHTNESS 120      // начальная яркость
 
 // ************************** ДЛЯ РАЗРАБОТЧИКОВ ***********************
 #define MODES_AMOUNT 15
 
 #include "GyverButton.h"
-GButton touch(BTN_PIN, LOW_PULL, NORM_OPEN);
+GButton touch(BTN_PIN, HIGH_PULL, NORM_OPEN);
 
 #include <FastLED.h>
 CRGB leds[NUM_LEDS];
@@ -30,7 +30,7 @@ GTimer_ms brightTimer(20);
 
 int brightness = BRIGHTNESS;
 int tempBrightness;
-byte thisMode = 2;
+byte thisMode = 11;
 
 
 bool gReverseDirection = false;
@@ -49,7 +49,9 @@ byte colorObject[NUMBEROBJECTS]; //цвета оъектов
 bool directionArry[NUMBEROBJECTS];// направление пиксиля (куда бежит)
 bool alredyShot[NUMBEROBJECTS]; // "уже вылетел", на кждый объект, чтобы не вылетали повторно.
 int positionArry[NUMBEROBJECTS];//позиция на ленте от 1 до колличества светодиодов на ленте
+bool selectPixArry[NUMBEROBJECTS];
 
+byte colicestvo;
 
 bool oneRun;
 
@@ -114,7 +116,7 @@ void loop() {
           whiteMode = !whiteMode;
           if (whiteMode) {
             effectTimer.stop();
-            fillAll(CHSV(0, 0, 255),0,NUM_LEDS-1);
+            fillAll(CHSV(45, 200, 255),0,NUM_LEDS-1);
             FastLED.show();
           } else {
             effectTimer.start();
@@ -175,6 +177,7 @@ void loop() {
       {
         if (oneRun == true){
           oneRun = false;
+          
           for (int i = 0; i < NUMBEROBJECTS/2; i++) //приспаиваю свойста первой половине объектов
           {
             timeToShot[i] = random(50, 2000); //время до вылета, после обновления таймера, после вылета всех, у каждого объекта оно измениться
@@ -216,7 +219,27 @@ void loop() {
         break;
       case 11: waterDrop();//newrwgim
         break;
-      case 12: comets();//newrwgim
+      case 12: {
+        if (oneRun == true){
+          oneRun = false;
+          colicestvo = 5;
+          while(true){
+            int i = random(0+NUM_LEDS/10,NUM_LEDS-NUM_LEDS/10);
+            if (selectPixArry[i] == false){
+              selectPixArry[i] = true;
+              colicestvo--;
+            }
+            if (colicestvo <=0) break;
+          }
+          fillAll(CHSV(150, 255, 40),0,NUM_LEDS);
+          for (int i = 0+NUM_LEDS/10; i <= NUM_LEDS-NUM_LEDS/10; i++){
+            if (selectPixArry[i]==true){
+
+            }
+          }
+        }
+        comets();//newrwgim
+      }
         break;
       case 13: colorCatchUp();
         break;
