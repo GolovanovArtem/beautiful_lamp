@@ -77,7 +77,6 @@ void lightBugs() {
 // ****************************** ЦВЕТА ******************************
 void colors() {
   hue += 1;
-  Serial.println(hue);
   for (int i = 0; i < NUM_LEDS; i++)
     leds[i] = CHSV((byte)(hue + i * float(255 / 255)), 255, 255);
 }
@@ -414,10 +413,6 @@ void waterDrop () {
 }
 // ****************************** КОМЕТЫ ******************************
 void comets () {
-  if (millis()-timermillis1 > 50){
-    int i = 
-  }
-  
 }
 // ****************************** САЛКИ ЦВЕТОВ ******************************
 void colorCatchUp () {
