@@ -2,16 +2,16 @@
 
 // ************************** НАСТРОЙКИ ***********************
 #define CURRENT_LIMIT 2000  // лимит по току в миллиамперах, автоматически управляет яркостью (пожалей свой блок питания!) 0 - выключить лимит
-#define AUTOPLAY_TIME 2000    // время между сменой режимов в секундах
-#define SLEEP_TIME 5000    // время до выключения по таймеру
+#define AUTOPLAY_TIME 2000  // время между сменой режимов в секундах
+#define SLEEP_TIME 5000     // время до выключения по таймеру
 
 
 
 #define NUM_LEDS 30         // количсетво светодиодов в одном отрезке ленты
 #define NUM_STRIPS 1        // количество отрезков ленты (в параллели)
-#define LED_PIN 12           // пин ленты
+#define LED_PIN 12          // пин ленты
 #define BTN_PIN 3           // пин кнопки/сенсора
-#define MIN_BRIGHTNESS 70  // минимальная яркость при ручной настройке
+#define MIN_BRIGHTNESS 70   // минимальная яркость при ручной настройке
 #define BRIGHTNESS 120      // начальная яркость
 
 // ************************** ДЛЯ РАЗРАБОТЧИКОВ ***********************
@@ -46,10 +46,11 @@ long timerAutoMode = 0;
 
 bool gReverseDirection = false;
 
+//-------------------------------------------переменные анимации при переключении-----------------------
+int action;
+#define SPED_ANIMATION 2 // скорость анимации при переключении, клечении, выключении режимов (от 1 до 4)
 
 boolean loadingFlag = true;
-boolean powerDirection = true;
-boolean powerState = true;
 //boolean brightDirection = true;
 //boolean wasStep = false;
 
@@ -109,8 +110,6 @@ void setup() {
 
 
   if (loging == true) Serial.print("Светильник включен\n");
-
-
 }
 
 void loop() {
@@ -120,48 +119,34 @@ void loop() {
     switch (clicks) {                               // один тап - смена режима --->
       case 1:
       {
-        if (powerDirection == false) //если сейчас не горит никакой режим, то включить на текущем thisMode
+        if (powerActive == false) //если сейчас не горит никакой режим, то включить на текущем thisMode
         {
-           timerSleepTF = false;
-           powerActive = true;
-           powerDirection = true;
-           tempBrightness = brightness * !powerDirection;
-          if (loging == true) Serial.print("Включить светильник\n");
+          switchPower(true);
         }
         else  // если уже включен, то нужно переключить режим --->
         {
-          anotherMode(true);
-          if (loging == true) Serial.print("Режим -->\n");// thisMode++;
+          if (whiteMode == false) action = 3;
         }
       }
         break;
       case 2:                // 2 тапа - смена режима <---
       
       {
-        if (powerDirection == false) //если сейчас не горит никакой режим, то включить на текущем thisMode
+        if (powerActive == false) //если сейчас не горит никакой режим, то включить на текущем thisMode
         {
-          timerSleepTF = false;
-          powerActive = true;
-          powerDirection = true;
-          tempBrightness = brightness * !powerDirection;
-          if (loging == true) Serial.print("Включить светильник\n");
+          switchPower(true);
         }
         else  // если уже включен, то нужно переключить режим <---
         {
-          anotherMode(false);
-          if (loging == true) Serial.print("Режим <--\n");// thisMode--;
+          if (whiteMode == false) action = 4;
         }
       }
         break;
       case 3: 
       {
-        if (powerDirection == false) //если сейчас не горит никакой режим, то включить на текущем thisMode
+        if (powerActive == false) //если сейчас не горит никакой режим, то включить на текущем thisMode
         {
-          timerSleepTF = false;
-          powerActive = true;
-          powerDirection = true;
-          tempBrightness = brightness * !powerDirection;
-          if (loging == true) Serial.print("Включить светильник\n");
+          switchPower(true);
         }
         else  // если уже включен, то...
         {
@@ -183,13 +168,9 @@ void loop() {
         break;
       case 4: 
       {
-        if (powerDirection == false)
+        if (powerActive == false)
        {
-        timerSleepTF = false;
-        powerActive = true;
-        powerDirection = true;
-        tempBrightness = brightness * !powerDirection;
-        Serial.print("Включить светильник\n");
+        switchPower(true);
        }
        else 
        {
@@ -222,14 +203,12 @@ void loop() {
 
       if (touch.isRelease()) // разжатие кнопки
     {
-      if (millis()- timePress >= 700) 
+      if (millis()- timePress >= 400) 
       {
-        if (millis()- timePress >= 1700)
+        if (millis()- timePress >= 1000)
         {
-          powerDirection = false;
-          powerActive = true;
-          tempBrightness = brightness * !powerDirection;
-          if (loging == true) Serial.print("Выключить светильник.\n");
+          if (powerActive) switchPower(false); 
+          else switchPower(true);
         }
         else
         {
@@ -237,7 +216,7 @@ void loop() {
             {
               whiteMode = true;
               effectTimer.stop();
-              fillAll(CHSV(45, 200, 255),0,NUM_LEDS);
+              fillAll(CHSV(45, 180, 255),0,NUM_LEDS);
               FastLED.show();
               if (loging == true) Serial.print("Включается белый цвет.\n"); // вместо этого код для залибки берым цветом ленты
             }
@@ -251,13 +230,9 @@ void loop() {
       }
       else 
       {
-        if (powerDirection == false)
+        if (powerActive == false)
          {
-          timerSleepTF = false;
-          powerActive = true;
-          powerDirection = true;
-          tempBrightness = brightness * !powerDirection;
-          Serial.print("Включить светильник\n");
+          switchPower(true);
          }
       }
       
@@ -271,65 +246,34 @@ void loop() {
   }
   if (millis() - timerSleep > SLEEP_TIME && timerSleepTF == true) 
   { 
-    timerSleepTF = false;
-    powerDirection = false;
-    powerActive = true;
-    tempBrightness = brightness * !powerDirection;
-    if (loging == true) Serial.print("Выключить светильник по таймеру.\n");
+    switchPower(false);
   }
   if (whiteMode == true) timerAutoMode = millis();
  
 
-  if (effectTimer.isReady() && powerState) {
+  if (effectTimer.isReady()) {
     switch (thisMode) {
-      case 0: lighter();
+      case 0: colors();
         break;
-      case 1: lightBugs();
+      case 1: rainbow();
         break;
-      case 2: colors();
+      case 2: cyberpunk();
         break;
-      case 3: rainbow();
+      case 3: colorCatchUp();
         break;
-      case 4: sparkles();
+      case 4: flashescamera();
         break;
-      case 5: cyberpunk();
+      case 5: lightBugs();
         break;
-      case 6: fire();
+      case 6: lighter();
         break;
-      case 7: condominium();
+      case 7: sparkles();
         break;
-      case 8: vinigret();
+      case 8: statikRainbow();
         break;
-      case 9: flashescamera();//newrwgim
+      case 9: staticColor();//newrwgim
         break;
-      case 10:
-      {
-        if (oneRun == true){
-          oneRun = false;
-          
-          for (int i = 0; i < NUMBEROBJECTS/2; i++) //приспаиваю свойста первой половине объектов
-          {
-            timeToShot[i] = random(50, 2000); //время до вылета, после обновления таймера, после вылета всех, у каждого объекта оно измениться
-            colorObject[i] = 0; //цвет лазерного выстрела присваивается только здесь 0 - красный 
-            directionArry[i] = true; //направление выстрела тру - вправо
-            alredyShot[i]=false; // возможно это можно будет убрать, потому что при объявлении и так все лож
-            positionArry[i] = -1;
-          }
-        
-          for (int i = NUMBEROBJECTS/2; i < NUMBEROBJECTS; i++) //приспаиваю свойста второй половине объектов
-          {
-            timeToShot[i] = random(50, 2000); //время до вылета, после обновления таймера, после вылета всех, у каждого объекта оно измениться
-            colorObject[i] = 150; //цвет лазерного выстрела присваивается только здесь 150 - наверное синий 
-            directionArry[i] = false; //направление выстрела фолс - влево
-            alredyShot[i]=false; // возможно это можно будет убрать, потому что при объявлении и так все лож
-            positionArry[i] = -1;
-      
-          }
-          chec_time_millis = millis();
-          FastLED.clear();
-        }
-        laserShot();
-      }
+      case 10: condominium();
         break;
       case 11: waterDrop();//newrwgim
         break;
@@ -352,43 +296,135 @@ void loop() {
             }
           }
         }
-        comets();//newrwgim
+        comets();
       }
         break;
-      case 13: colorCatchUp();
-        break;
-      case 14: staticColor();
-        break;
-      case 15: statikRainbow();
+      case 13: fire();
         break;
     }
     FastLED.show();
+
   }
 
-  brightnessTick();
+
+  if (action != 0) animationBrigtness();
+
 }
 
+void  switchPower(bool offOrOn)
+{
+  if (offOrOn)
+  {
+    action = 2;
+    timerSleepTF = false;
+    powerActive = true;
+    tempBrightness = brightness * !powerActive;
+    if (loging == true) Serial.print("Включить светильник (On). \n");
+  }
+  else
+  {
+    timerSleepTF = false;
+    action = 1;
+    powerActive = false;
+    tempBrightness = brightness * !powerActive;
+    if (loging == true) Serial.print("Выключить светильник (Off).\n");
+  }
+}
+
+
+void animationBrigtness() //action принимает значения 1 - fade / 2 - burn / 3 - rigth / 4 - left  / 0 - nothing
+{
+  switch (action) 
+  {
+      case 1:
+      {
+        if (brightness - SPED_ANIMATION > 0) {
+          brightness -= SPED_ANIMATION;
+          FastLED.setBrightness(brightness);
+          FastLED.show();
+        }
+        else 
+        {
+          brightness = 0;
+          FastLED.setBrightness(brightness);
+          FastLED.show();
+          action = 0;
+        }
+      }
+        break;
+      case 2: 
+      {
+        if (brightness + SPED_ANIMATION < 245){
+          brightness += SPED_ANIMATION;
+          FastLED.setBrightness(brightness);
+          FastLED.show();
+          Serial.println("Увеличиваю яркость");
+        }
+        else action = 0;
+      }
+        break;
+      case 3: swichMode(true);
+        break;
+      case 4: swichMode(false);
+        break;
+  }
+}
+bool flagThenSwitchMode = false;
+
+void swichMode(bool direct)
+{
+  if (flagThenSwitchMode == false)
+        {
+          if (brightness - SPED_ANIMATION > 0) {
+            brightness-=SPED_ANIMATION;
+            FastLED.setBrightness(brightness);
+            FastLED.show();
+          }
+          else 
+          {
+            anotherMode(direct);
+            flagThenSwitchMode = true;
+          }
+        }
+        else
+        {
+          if (brightness + SPED_ANIMATION < 249) {
+            brightness += SPED_ANIMATION;
+            FastLED.setBrightness(brightness);
+            FastLED.show();
+          }
+          else 
+          {
+            action = 0;
+            flagThenSwitchMode = false;
+          }
+        }
+       
+}
 void anotherMode(bool direct) {
-    loadingFlag = true;
-    oneRun = true;
-    if (direct){
-      thisMode++;
-      if (thisMode >= MODES_AMOUNT) thisMode = 0;
-    }
-    else {
+      loadingFlag = true;
+      oneRun = true;
+      if (direct)
+      {
+        if (loging == true) Serial.print("Режим -->\n");// thisMode++;
+        thisMode++;
+        if (thisMode >= MODES_AMOUNT) thisMode = 0;
+      }
+      else 
+      {
       
-      if (thisMode == 0) thisMode = MODES_AMOUNT - 1;
-      else thisMode--;
-    }
-  
+        if (loging == true) Serial.print("Режим <--\n");// thisMode--;
+        if (thisMode == 0) thisMode = MODES_AMOUNT - 1;
+        else thisMode--;
+      }
 
-  FastLED.clear();
+      FastLED.clear();
 }
-
+/*
 void brightnessTick() {
   if (powerActive) {
     if (brightTimer.isReady()) {
-      if (powerDirection) {
+      if (powerActive) {
         powerState = true;
         tempBrightness += 10;
         if (tempBrightness > brightness) {
@@ -410,3 +446,4 @@ void brightnessTick() {
     }
   }
 }
+*/
