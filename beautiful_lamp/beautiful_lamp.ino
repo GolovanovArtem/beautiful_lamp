@@ -1,8 +1,8 @@
 #define NUMBEROBJECTS 8
 
 // ************************** НАСТРОЙКИ ***********************
-#define CURRENT_LIMIT 2000  // лимит по току в миллиамперах, автоматически управляет яркостью (пожалей свой блок питания!) 0 - выключить лимит
-#define AUTOPLAY_TIME 2000  // время между сменой режимов в секундах
+#define CURRENT_LIMIT 100000  // лимит по току в миллиамперах, автоматически управляет яркостью (пожалей свой блок питания!) 0 - выключить лимит
+#define AUTOPLAY_TIME 100000  // время между сменой режимов в секундах
 #define SLEEP_TIME 5000     // время до выключения по таймеру
 
 
@@ -31,9 +31,11 @@ GTimer_ms brightTimer(20);
 int brightness = BRIGHTNESS;
 int tempBrightness;
 byte thisMode = 0;
+byte saveMode = 0;
 
 //------------------------------------------переменные для управления,для таймеров---------------------
-
+bool lisenButton = true; // переменная для того, чтобы выключать кнопку, когда это требуется, главное не забывать включать ее снова
+bool stateButton = false;
 bool loging = true; // логирование отладки управления
 boolean powerActive = true; // состояние включенно выключенно
 boolean whiteMode = false; // режим подсветики белым
@@ -46,9 +48,23 @@ long timerAutoMode = 0;
 
 bool gReverseDirection = false;
 
-//-------------------------------------------переменные анимации при переключении-----------------------
-int action;
-#define SPED_ANIMATION 2 // скорость анимации при переключении, клечении, выключении режимов (от 1 до 4)
+byte hue;
+byte brightnesspix;
+byte saturation;
+byte count;
+
+//------------------------------------------- анимация при переключении -------------------------------
+byte action; 
+bool flagThenSwitchMode = false;
+#define SPEED_ANIMATION 2 // скорость анимации при переключении, клечении, выключении режимов (от 1 до 4)
+
+//-------------------------------------------  обратная связь по включениюЪвыключению таймеров ---------
+byte colorFlash = 0; // цвет мигания 
+byte countFlash = 0; //сколько вспыхнуть
+bool directSpeedFlash = false;
+GTimer_ms myTimer(500); // таймер переодичности всыпивания
+bool randomColor = false;
+
 
 boolean loadingFlag = true;
 //boolean brightDirection = true;
@@ -113,7 +129,7 @@ void setup() {
 }
 
 void loop() {
-  touch.tick();
+  if (lisenButton) touch.tick();
   if (touch.hasClicks()) { // проверка на наличие действий с кнопкой
     byte clicks = touch.getClicks();// считаем колличество тапов по кнопке
     switch (clicks) {                               // один тап - смена режима --->
@@ -154,13 +170,13 @@ void loop() {
           {
             timerSleepTF = true;
             timerSleep = millis();
-                                                                            // помигать что таймер включен
+            pullFeedbackTimer(100, 3); // 100 - green
             if (loging == true) Serial.print("Таймер сна активирован\n");
           }
           else 
           {
             timerSleepTF = false;
-                                                                            // помигать что таймер сна отключен
+            pullFeedbackTimer(0, 1); // 0 - red
             if (loging == true) Serial.print("Таймер сна дизактивирован\n");
           }
         }
@@ -178,13 +194,15 @@ void loop() {
         {
           AutoModeTF = true;
           timerAutoMode = millis();
-                                                                   // помигать что таймер автосмены включен
+          pullFeedbackTimer(random(0,255), 255); // 100 - green
+          whiteMode = false;
+          effectTimer.start();
           if (loging == true) Serial.print("Авто смена режимов активирована\n");
         }
         else 
         {
           AutoModeTF = false;
-                                                                  // помигать что таймер автосмены выключен
+          pullFeedbackTimer(0, 1); // 0 - red
           if (loging == true) Serial.print("Авто смена режимов дизактивирована\n");
         }
        }
@@ -198,45 +216,49 @@ void loop() {
   if (touch.isPress()) // нажатие кнопки
     {
       timePress = millis(); // засекаю время нажатия 
+      stateButton = true;
     }
 
 
-      if (touch.isRelease()) // разжатие кнопки
+  if (touch.isRelease()) // разжатие кнопки
+  {
+    stateButton = false;
+    if (millis()- timePress >= 300 && millis()- timePress < 1000) 
     {
-      if (millis()- timePress >= 400) 
+      if (powerActive)
       {
-        if (millis()- timePress >= 1000)
+        if (whiteMode == false)
         {
-          if (powerActive) switchPower(false); 
-          else switchPower(true);
+          whiteMode = true;
+          effectTimer.stop();
+          fillAll(CHSV(45, 180, 255),0,NUM_LEDS);
+          FastLED.show();
+          if (loging == true) Serial.print("Включается белый цвет.\n"); // вместо этого код для залибки берым цветом ленты
         }
-        else
+        else 
         {
-            if (whiteMode == false)
-            {
-              whiteMode = true;
-              effectTimer.stop();
-              fillAll(CHSV(45, 180, 255),0,NUM_LEDS);
-              FastLED.show();
-              if (loging == true) Serial.print("Включается белый цвет.\n"); // вместо этого код для залибки берым цветом ленты
-            }
-            else 
-            {
-              whiteMode = false;
-              effectTimer.start();
-              if (loging == true) Serial.print("Выключается белый цвет, загарается режим который был до его включения\n"); // вместо этого код для заливки ленты режимом
-            }
+          whiteMode = false;
+          effectTimer.start();
+          if (loging == true) Serial.print("Выключается белый цвет, загарается режим который был до его включения\n"); // вместо этого код для заливки ленты режимом
         }
       }
-      else 
-      {
-        if (powerActive == false)
-         {
-          switchPower(true);
-         }
-      }
+      else switchPower(true);
+        
+    }
+  }
+
+  if (millis()- timePress == 1000 && stateButton)
+  {
+    if (powerActive) switchPower(false); 
+    else 
+    {
+      switchPower(true);
       
     }
+
+    stateButton = false;
+  }
+    
 
   if (millis() - timerAutoMode > AUTOPLAY_TIME && AutoModeTF == true) 
   {
@@ -301,6 +323,8 @@ void loop() {
         break;
       case 13: fire();
         break;
+      case 200: feedbackTimer();
+        break;
     }
     FastLED.show();
 
@@ -320,6 +344,11 @@ void  switchPower(bool offOrOn)
     powerActive = true;
     tempBrightness = brightness * !powerActive;
     if (loging == true) Serial.print("Включить светильник (On). \n");
+    whiteMode = true;
+    effectTimer.stop();
+    fillAll(CHSV(45, 180, 255),0,NUM_LEDS);
+    FastLED.show();
+    if (loging == true) Serial.print("Включается белый цвет.\n"); // вместо этого код для залибки берым цветом ленты
   }
   else
   {
@@ -338,8 +367,8 @@ void animationBrigtness() //action принимает значения 1 - fade 
   {
       case 1:
       {
-        if (brightness - SPED_ANIMATION > 0) {
-          brightness -= SPED_ANIMATION;
+        if (brightness - SPEED_ANIMATION > 0) {
+          brightness -= SPEED_ANIMATION;
           FastLED.setBrightness(brightness);
           FastLED.show();
         }
@@ -354,8 +383,8 @@ void animationBrigtness() //action принимает значения 1 - fade 
         break;
       case 2: 
       {
-        if (brightness + SPED_ANIMATION < 245){
-          brightness += SPED_ANIMATION;
+        if (brightness + SPEED_ANIMATION < 245){
+          brightness += SPEED_ANIMATION;
           FastLED.setBrightness(brightness);
           FastLED.show();
           Serial.println("Увеличиваю яркость");
@@ -369,14 +398,13 @@ void animationBrigtness() //action принимает значения 1 - fade 
         break;
   }
 }
-bool flagThenSwitchMode = false;
 
 void swichMode(bool direct)
 {
   if (flagThenSwitchMode == false)
         {
-          if (brightness - SPED_ANIMATION > 0) {
-            brightness-=SPED_ANIMATION;
+          if (brightness - SPEED_ANIMATION > 0) {
+            brightness-=SPEED_ANIMATION;
             FastLED.setBrightness(brightness);
             FastLED.show();
           }
@@ -388,8 +416,8 @@ void swichMode(bool direct)
         }
         else
         {
-          if (brightness + SPED_ANIMATION < 249) {
-            brightness += SPED_ANIMATION;
+          if (brightness + SPEED_ANIMATION < 249) {
+            brightness += SPEED_ANIMATION;
             FastLED.setBrightness(brightness);
             FastLED.show();
           }
@@ -420,30 +448,15 @@ void anotherMode(bool direct) {
 
       FastLED.clear();
 }
-/*
-void brightnessTick() {
-  if (powerActive) {
-    if (brightTimer.isReady()) {
-      if (powerActive) {
-        powerState = true;
-        tempBrightness += 10;
-        if (tempBrightness > brightness) {
-          tempBrightness = brightness;
-          powerActive = false;
-        }
-        FastLED.setBrightness(tempBrightness);
-        FastLED.show();
-      } else {
-        tempBrightness -= 10;
-        if (tempBrightness < 0) {
-          tempBrightness = 0;
-          powerActive = false;
-          powerState = false;
-        }
-        FastLED.setBrightness(tempBrightness);
-        FastLED.show();
-      }
-    }
-  }
+// каким цветом и сколько раз маргнуть, после того как поморгает вернет текущий режим
+
+
+void pullFeedbackTimer(byte col, byte cou){ 
+  directSpeedFlash = true;
+  countFlash = cou;
+  colorFlash = col;
+  brightnesspix = 0;
+  saveMode = thisMode;
+  thisMode = 200;
+  lisenButton = false;
 }
-*/

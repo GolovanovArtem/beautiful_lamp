@@ -13,10 +13,7 @@ byte brightnesspixArry[NUM_LEDS];
 bool shotAll; // флаг что вылетели все, можно обновлять таймер
 
 
-byte hue;
-byte brightnesspix;
-byte saturation;
-byte count;
+
 // ****************************** ОГОНЁК ******************************
 int16_t position;
 boolean direction;
@@ -490,6 +487,51 @@ void fade() {
   for (int i = 0; i < NUM_LEDS; i++) {
     if ((uint32_t)getPixColor(i) == 0) continue;
     leds[i].fadeToBlackBy(TRACK_STEP);
+  }
+}
+/*#define SPEEDFLASH 2 // скоросто прибавления яркости
+byte colorFlash = 0; // цвет мигания 
+byte countFlash = 0; //сколько вспыхнуть
+bool directSpeedFlash = falsee;
+GTimer_ms myTimer(500); // таймер переодичности всыпивания
+byte hue;
+byte brightnesspix;
+byte saturation;
+
+нужно:
+1- обновляь  countFlash_
+2- делать directSpeedFlash_ = trye_ при переключении на этот мод   ++++
+3 - задовать цвет в colorFlash_ 
+4 - сохранять thisMode_ в saveMode_
+*/
+
+void feedbackTimer()
+{
+  if (countFlash == 255) {
+    countFlash = 4;
+    randomColor = true;
+  }
+  if (directSpeedFlash) brightnesspix += 50;
+  else brightnesspix -= 50;
+
+  
+
+  for (int i = 0; i < NUM_LEDS; i++)
+  {
+    leds[i] = CHSV(colorFlash, 255, brightnesspix);
+  }
+  
+  if (brightnesspix > 220) directSpeedFlash = false;
+  if (brightnesspix < 10) {
+    directSpeedFlash = true;
+    countFlash--;
+    brightnesspix = 0;
+    if (randomColor) colorFlash = random(0,255);
+  }
+  if (countFlash <= 0){
+    thisMode=saveMode;
+    randomColor = false;
+    lisenButton = true;
   }
 }
 
