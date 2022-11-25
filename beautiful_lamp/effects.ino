@@ -469,7 +469,6 @@ void colorCatchUp () {
 //byte saturation;
 
 void staticColor () {
-  hue = 0;
   for (int i = 0; i < NUM_LEDS; i++){
     leds[i] = CHSV(hue, 255, 255);
   }
@@ -505,38 +504,60 @@ byte saturation;
 4 - сохранять thisMode_ в saveMode_
 */
 
+
+
 void feedbackTimer()
 {
-  if (countFlash == 255) {
-    countFlash = 4;
-    randomColor = true;
-  }
-  if (directSpeedFlash) brightnesspix += 50;
-  else brightnesspix -= 50;
 
-  
-
+   
   for (int i = 0; i < NUM_LEDS; i++)
   {
-    leds[i] = CHSV(colorFlash, 255, brightnesspix);
+     leds[i] = CHSV(colorFlash, 255, brightnesspix);
   }
-  
-  if (brightnesspix > 220) directSpeedFlash = false;
-  if (brightnesspix < 10) {
-    directSpeedFlash = true;
+
+
+  if (brightnesspix > 180){
+    if (randomColor == true) colorFlash = random(0,255); 
+    directSpeedFlash = false;
     countFlash--;
-    brightnesspix = 0;
-    if (randomColor) colorFlash = random(0,255);
   }
+  if (brightnesspix <= 42)
+  {
+    directSpeedFlash = true;
+  }
+
   if (countFlash <= 0){
     thisMode=saveMode;
     randomColor = false;
     lisenButton = true;
   }
+
+
+  if (directSpeedFlash)brightnesspix+=30;
+  else brightnesspix-=30;
+
+
 }
 
 void synchronizationArrays(byte i, byte col, byte stst, byte brig){
   colArry[i] = col;
   saturationArry[i] = stst;
   brightnesspixArry[i] = brig;
+}
+
+void MoonLight()      
+{
+  for (int i = 0; i < NUM_LEDS; i++)
+    {
+       leds[i] = CHSV(45, 180, 250);
+    }
+    FastLED.show();  
+}
+
+void HalfMoonLight(){
+    for (int i = 0; i < NUM_LEDS; i++)
+    {
+       leds[i] = CHSV(45, 180, 60);
+    }
+    FastLED.show();  
 }
